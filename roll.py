@@ -17,44 +17,50 @@ async def start_rolling():
     """Запускаем"""
     await on_startup()
     while True:
-        profiles = await get_profiles()
-        for pd in profiles:
-            if pd['last_date']:
-                _check_for_time(pd['last_date'])
-            options = webdriver.ChromeOptions()
-            options.add_argument("user-data-dir=C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\User Data")
-            options.add_argument(f"--profile-directory={pd['name']}")
-            browser = webdriver.Chrome(chrome_options=options)
-            sleep(3)
-            browser.get('https://freebitco.in/')
-            sleep(5)
-            _cancel_notification(browser)
-            button = _get_button_or_none(browser)
-            if button:
-                logger.info('Кнопка доступна!')
-                if _captcha_is_needed(browser):
-                    logger.info('Капча нужна!')
-                    _click_i_not_robot(browser)
-                    _wait_captcha_complete(browser)
-                else:
-                    logger.info('Капчи нет!')
-                button.send_keys(Keys.RETURN)
-                sleep(2)
+        try:
+            profiles = await get_profiles()
+            for pd in profiles:
+                try:
+                    if pd['last_date']:
+                        _check_for_time(pd['last_date'])
+                    options = webdriver.ChromeOptions()
+                    options.add_argument("user-data-dir=C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\User Data")
+                    options.add_argument(f"--profile-directory={pd['name']}")
+                    browser = webdriver.Chrome(chrome_options=options)
+                    sleep(3)
+                    browser.get('https://freebitco.in/')
+                    sleep(5)
+                    _cancel_notification(browser)
+                    button = _get_button_or_none(browser)
+                    if button:
+                        logger.info('Кнопка доступна!')
+                        if _captcha_is_needed(browser):
+                            logger.info('Капча нужна!')
+                            _click_i_not_robot(browser)
+                            _wait_captcha_complete(browser)
+                        else:
+                            logger.info('Капчи нет!')
+                        button.send_keys(Keys.RETURN)
+                        sleep(2)
 
-            actual_balance = _get_balance_or_none(browser)
-            if not actual_balance:
-                actual_balance = pd['actual_balance']
-            total_winnings = pd['total_winnings']
-            winning = _get_winning_or_none(browser)
-            if winning:
-                status = 'OK'
-            else:
-                status = 'ERROR'
-            now_date = datetime.now(timezone('Europe/Moscow'))
-            await update_profile(profile_id=pd['id'], actual_balance=actual_balance,
-                                 total_winning=total_winnings, last_date=now_date, winning=winning)
-            await add_roll(pd['id'], winning, status, now_date)
-            browser.close()
+                    actual_balance = _get_balance_or_none(browser)
+                    if not actual_balance:
+                        actual_balance = pd['actual_balance']
+                    total_winnings = pd['total_winnings']
+                    winning = _get_winning_or_none(browser)
+                    if winning:
+                        status = 'OK'
+                    else:
+                        status = 'ERROR'
+                    now_date = datetime.now(timezone('Europe/Moscow'))
+                    await update_profile(profile_id=pd['id'], actual_balance=actual_balance,
+                                         total_winning=total_winnings, last_date=now_date, winning=winning)
+                    await add_roll(pd['id'], winning, status, now_date)
+                    browser.close()
+                except:
+                    pass
+        except:
+            pass
 
 
 def roll_one():
